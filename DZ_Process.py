@@ -1,33 +1,19 @@
 import os
 import re
 import sys
-
-
 #==========================================================
 def main():
-    if len(sys.argv)>1 :
-        path=sys.argv[1]
-    else :
-        path='H:\\WORKSPACE\\DaoZ\\html'
-        # print ("---$:usage: cbetaDataProcess.py dirname.")        
-        # sys.exit(1)
+    path='H:\\WORKSPACE\\DaoZ\\html'
     fileList = os.listdir(path)
-    # for i in range(0,len(fileList)):
-    for i in range(0,30):        
+    for i in range(0,len(fileList)):
         print(str(i+1).rjust(3,'0'),'/',len(fileList),'---$: ',fileList[i])
-        data=processFile(path+'\\'+fileList[i])        
+        data=readFile(path+'\\'+fileList[i])
+        data=preprocess(data)
         if data!=None:
             addr='result\\'+fileList[i].replace('html','txt')
             writeFile(addr,data)
-        # break#-----------------------------------
     
 #==========================================================    
-def processFile(path):
-    print(path)
-    string=readFile(path)
-    string=preprocess(string)
-    return string
-
 def preprocess(data):
     h=data.find('<div class="mw-parser-output">')+len('<div class="mw-parser-output">')
     t =data.find('<div class="printfooter">')
@@ -101,8 +87,6 @@ def removeNestTag(data,t_head,t_tail):#delete nest tag
         data=data[0:h]+data[t+len(t_tail):]
     return data
 
-
-    
 
 def  readFile(filedir):
     with open(filedir, "r", encoding='utf-8') as f :

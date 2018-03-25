@@ -17,17 +17,15 @@ def writeFile(filedir,string):
     with open(filedir, "w+", encoding='utf-8') as f:
         f.write(string)
 
-def getHtml(url):
-    with urllib.request.urlopen(url) as f:
-        # print('Status:', f.status, f.reason)
-        data = f.read().decode('utf-8')
-    return data
+# def getHtml(url):
+#     with urllib.request.urlopen(url) as f:
+#         data = f.read().decode('utf-8')
+#     return data
 
 def requestHtml(url):
     response  = requests.get(url)
     response.enconding = "utf-8"
     return response.text
-
 
 
 def Process(data):
