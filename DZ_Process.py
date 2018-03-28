@@ -1,83 +1,102 @@
+import datetime
 import os
 import re
 import sys
-#==========================================================
-def main():
+import time
+
+def main(base=0):
     path='H:\\WORKSPACE\\DaoZ\\html'
     fileList = os.listdir(path)
-    for i in range(0,len(fileList)):
-        print(str(i+1).rjust(3,'0'),'/',len(fileList),'---$: ',fileList[i])
+    top = len(fileList)
+
+    if base!=0:
+        top=base+1
+
+    for i in range(base, top):
+        print(datetime.datetime.now(),'--$:',str(i+1).rjust(4,'0'),'/',len(fileList),'---$:',fileList[i])
         data=readFile(path+'\\'+fileList[i])
-        data=preprocess(data)
-        if data!=None:
-            addr='result\\'+fileList[i].replace('html','txt')
-            writeFile(addr,data)
+        data=preProcess(data)
+        data=process(data)
+        addr='result\\'+fileList[i].replace('html','txt')
+        writeFile(addr,data)
+        # time.sleep(1)
     
 #==========================================================    
-def preprocess(data):
-    h=data.find('<div class="mw-parser-output">')+len('<div class="mw-parser-output">')
-    t =data.find('<div class="printfooter">')
-    data=data[h:t]
+def preProcess(data):
+    data=getStr(data,'<div class="mw-parser-output">','<div class="printfooter">')
 
     data=removeNestTag(data,'<table','</table>')
-    data=re.sub(r'\n','',data)
-    data=re.sub(r'<h\d(.|\n)+?</h\d>','\n',data)
-    data=re.sub(r'<noscript>(.|\n)+?</noscript>','\n',data)
-    data=re.sub(r'<!--(.|\n)+?-->','\n',data)
-
-    data=re.sub(r'<div class="toctitle"(.|\n)+?</div>','',data)
-    data=re.sub(r'<div id="toc" class="toc">(.|\n)+?</div>','',data)
-    data=re.sub(r'<div class="thumb(.|\n)+?</div>','',data)
-    data=re.sub(r' <a href="/wiki(.|\n)+?<img alt(.|\n)+?</a>','',data)
-    data=re.sub(r'<a href=(.|\n)+?title=(.|\n)+?>','',data)
+    data=removeNestTag(data,'<ul>','</ul>')
     data=re.sub(r'<ol class="references">(.|\n)+?</ol>','',data)
-    data=re.sub(r'<sup id="cite_ref(.|\n)+?</a></sup>','',data)
+    data=re.sub(r'<h\d(.|\n)+?</h\d>','\n##HHH\n',data)    #段间分割
 
-    # data=re.sub(r'：</p>','：',data)
-    # data=re.sub(r'，</p>','，',data)
-    data=re.sub(r'</p>','\n\n',data)
-    data=re.sub(r'<p>','',data) 
-    # data=re.sub(r'：</li>','：',data)
-    # data=re.sub(r'，</li>','，',data)
-    # data=re.sub(r'</li>','\n\n',data)
+    data=re.sub(r'<!--(.|\n)+?-->','\n',data)
+    data=re.sub(r'<noscript>(.|\n)+?</noscript>','\n',data)
 
+    data=re.sub(r'\n</p>','</p>\n',data)
+    data=re.sub(r'<p>','$P',data)
+    data=re.sub(r'&#91;','[',data)
+    data=re.sub(r'&#93;',']',data)
+    data=re.sub(r'&lt;','',data)
+    data=re.sub(r'&gt;','',data)
+    data=re.sub(r'<b>\(注\)</b>\d{1,3}','',data)
+    
+    # data=removeNestTag(data,'<div','</div>')&#91;1&#93;   
+    # data=re.sub(r'<a .+?</a>','',data)
+
+    data=re.sub(r'(	|　| )','',data)
+    data=re.sub(r'<.+?>','',data)
+    data=re.sub(r'\n','',data)
+    data=re.sub(r'#\d+','',data)
+    data=re.sub(r'(〈|〉)','',data)
+    data=re.sub(r'(〔|〕)','',data)
     data=re.sub(r'（.+?）','',data)
-    data=re.sub(r'<span(.|\n)+?>','',data)
-    data=re.sub(r'</span>','',data) 
-    data=re.sub(r'<br />','',data)
-    data=re.sub(r'</div>','',data)     
-    data=re.sub(r'</a>','',data)   
-    data=re.sub(r'(	|　| )','',data)  
-    data=re.sub(r'[<>〈〉]','',data)   
+    data=re.sub(r'\[.+?\]','',data)
 
-    data=re.sub(r'&lt;','<',data)   
-    data=re.sub(r'&gt;','>',data)
+    data=re.sub(r'△','',data)
+    data=re.sub(r'[①②③④⑤⑥⑦⑧⑨⑩⑪⑫]','',data)
 
+    lsp=data.split('$P')
+    for i in range(0,len(lsp)):
+        s=lsp[i]
+        
+        if s.count('，') + s.count('。') == 0:
+            s=''      
+
+        lsp[i]=s        
+    data=''.join(lsp)
+
+    data=re.sub(r'##HHH','\n\n',data)
     data=re.sub(r'\n\n+','\n\n',data)
-    data=re.sub(r'：\n\n','：',data)
-    data=re.sub(r'，\n\n','，',data)
     data=data.lstrip('\n').rstrip('\n')
+    return data
 
+def getStr(data,head,tial):
+    h=data.find(head)+len(head)
+    da=data[h:]
+    t =h+da.find(tial)    
+    return data[h:t]
 
+def process(data):
     lsp=data.split('\n\n')
     for i in range(0,len(lsp)):
         s=lsp[i]
 
-        s=s.replace('\n','')
-        
-        # if (s.endswith('。') or s.endswith('？') or  s.endswith('！') or  s.endswith('」') or s.endswith('』'))==False:
-        #     if s.count('。') > 5 and s.count('，') > 5:
-        #         s+='。'    
-        #     else:
-        #         s=''
-        if s.count('，') == 0 and s.count('。') == 0:
-            s=''            
+        if s.count('，') + s.count('。') <= 1:
+            s=''      
+
+        if (s.endswith('。') or s.endswith('？') or  s.endswith('！') or  s.endswith('”') or  s.endswith(' 」'))==False:
+            if s.count('。') + s.count('，') !=0:
+                s+='。'    
+            else:
+                s=''
 
         lsp[i]=s        
     data='\n\n'.join(lsp)
 
     data=re.sub(r'\n\n+','\n\n',data)
     data=data.lstrip('\n').rstrip('\n')
+    
     return data
 
 def removeNestTag(data,t_head,t_tail):#delete nest tag
@@ -86,7 +105,6 @@ def removeNestTag(data,t_head,t_tail):#delete nest tag
         t=h+data[h:].find(t_tail)
         data=data[0:h]+data[t+len(t_tail):]
     return data
-
 
 def  readFile(filedir):
     with open(filedir, "r", encoding='utf-8') as f :
@@ -102,5 +120,10 @@ def writeFile(filedir,string):
 
 #==========================================================
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 1:
+        x = sys.argv[1]
+        x = int(x)
+        main(x-1)
+    else:
+        main()
 #==========================================================
